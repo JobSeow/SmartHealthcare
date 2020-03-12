@@ -9,8 +9,12 @@ After cloning the repo, using powershell, create an environment in the root fold
 
 Step 2:
 After entering env, under main, run
+
 ``` pip install -r requirements.txt ```
 
 Step 3:
-It take a long time to download, because of keras, tensorflow
+It take a long time to download, because of keras, tensorflow. run
 
+```$env:FLASK_APP = "app"```
+
+```flask run```
