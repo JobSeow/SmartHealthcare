@@ -20,9 +20,10 @@ def allowed_file(filename):
 
 def prepare(image):
     IMG_SIZE = 50  # 50 in txt-based
-    img_array = cv2.imread(image, cv2.IMREAD_GRAYSCALE)  # read in the image, convert to grayscale
+    img_array = cv2.imread(image)  # read in the image, convert to grayscale
+    img_array = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB) # cv2 uses BGR rather than RGB, need to convert
     new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE))  # resize image to match model's expected sizing
-    return new_array.reshape(-1, IMG_SIZE, IMG_SIZE, 1)  # return the image with shaping that TF wants.
+    return new_array.reshape(-1, IMG_SIZE, IMG_SIZE, 3)  # return the image with shaping that TF wants.
 
 
 ######## Routes ###############
@@ -62,7 +63,7 @@ def predict():
         file.save(os.path.join('./test','test.jpg'))
         print(filename + " loaded. Now Predicting.......")
 
-
+    
     prediction = model.predict([prepare('./test/test.jpg')]) 
     print("Prediction is "+ CATEGORIES[int(prediction[0][0])])
     return "Prediction is "+ CATEGORIES[int(prediction[0][0])]

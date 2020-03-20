@@ -6,30 +6,32 @@ from tqdm import tqdm
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.callbacks import TensorBoard
+import time
 import datetime
-
 DATADIR = "./training_files"
-CATEGORIES = ["no_problem", "problem"]
+CATEGORIES = ["Normal", "Abnormal"] 
 IMG_SIZE = 50
 
 def create_training_data(DATADIR, category, IMG_SIZE):
     training_data= []
     for category in CATEGORIES:  
-
-        path = os.path.join(DATADIR,category)  
-        class_num = CATEGORIES.index(category) 
-
-        for img in tqdm(os.listdir(path)): 
+        print(category)
+        path = os.path.join(DATADIR,category) # ./drive/My Drive/PartA_DFU_Dataset/ + Normal
+        class_num = CATEGORIES.index(category)
+        count = 0
+        for img in os.listdir(path)[1:]:  # have to skip the first file which is a .DSStore file
+            count +=1
+            print("Count", count)
             try:
-                img_array = cv2.imread(os.path.join(path,img) ,cv2.IMREAD_GRAYSCALE) 
-                new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE)) 
-                training_data.append([new_array, class_num])  
-            except Exception as e:  
-                pass
-            except OSError as e:
-               print("OSErrroBad img most likely", e, os.path.join(path,img))
+                img_array = cv2.imread(os.path.join(path,img),cv2.IMREAD_COLOR ) # Reads and returns the image in array form 
+                img_array = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB) # cv2 uses BGR rather than RGB, need to convert
+                img_array = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB) # cv2 uses BGR rather than RGB, need to convert
+                new_array = cv2.resize(img_array, (IMG_SIZE, IMG_SIZE)) # to make sure they are all the same size
+                training_data.append([new_array, class_num])
             except Exception as e:
-               print("general exception", e, os.path.join(path,img))
+                print("here")
+            pass
     return training_data
 
 
@@ -44,9 +46,9 @@ def reshape_data(training_data):
         x.append(features)
         y.append(label)
 
-    print(x[0].reshape(-1, IMG_SIZE, IMG_SIZE, 1))
+    print(x[0].reshape(-1, IMG_SIZE, IMG_SIZE, 3))
 
-    x = np.array(x).reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+    x = np.array(x).reshape(-1, IMG_SIZE, IMG_SIZE, 3)
     return x, y
 
 def pickle_data(x,y):
@@ -66,6 +68,9 @@ def generate_model():
 
     pickle_in = open("./pickle_files/y.pickle","rb")
     y = pickle.load(pickle_in)
+    NAME = "Diabetes-CNN{}".format(int(time.time()))
+
+    tensorboard = TensorBoard(log_dir="logs\{}".format(NAME))
 
     X = X/255.0
 
@@ -82,6 +87,7 @@ def generate_model():
     model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
 
     model.add(Dense(64))
+    model.add(Activation('relu'))
 
     model.add(Dense(1))
     model.add(Activation('sigmoid'))
@@ -90,8 +96,13 @@ def generate_model():
                 optimizer='adam',
                 metrics=['accuracy'])
 
-    model.fit(X, y, batch_size=32, epochs=3, validation_split=0.3)
-
+    # model.fit(X, y, batch_size=32, epochs=10, validation_split=0.3)
+    
+    model.fit(X, y,
+          batch_size=32,
+          epochs=10,
+          validation_split=0.3,
+          callbacks=[tensorboard])
     return model
 def train():
     training_data = create_training_data(DATADIR, CATEGORIES, IMG_SIZE)
