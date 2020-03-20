@@ -100,7 +100,7 @@ def generate_model():
     
     model.fit(X, y,
           batch_size=32,
-          epochs=10,
+          epochs=20,
           validation_split=0.3,
           callbacks=[tensorboard])
     return model
